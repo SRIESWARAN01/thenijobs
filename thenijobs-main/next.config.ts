@@ -2,6 +2,10 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   devIndicators: false,
+  outputFileTracing: false,
+  experimental: {
+    webpackBuildWorker: false,
+  },
   images: {
     unoptimized: true,
     remotePatterns: [
