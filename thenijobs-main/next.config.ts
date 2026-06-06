@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   devIndicators: false,
-  outputFileTracing: false,
+  outputFileTracingRoot: process.cwd(),
   experimental: {
     webpackBuildWorker: false,
   },
