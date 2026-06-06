@@ -7,7 +7,7 @@ import {
   TrendingUp, ArrowUpRight, Eye, Clock, CheckCircle,
   ChevronRight, Star, MapPin, Building2, FileText,
   Sparkles, Target, Award, Zap, GraduationCap,
-  User, Search, Loader2
+  User, Search, Loader2, type LucideIcon
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useCollection } from '@/hooks/useFirestore';
@@ -47,6 +47,31 @@ const colorMap: Record<string, { bg: string; text: string }> = {
   emerald: { bg: 'bg-emerald-500/10', text: 'text-emerald-400' },
 };
 
+interface StatItem {
+  label: string;
+  value: number;
+  icon: LucideIcon;
+  color: keyof typeof colorMap;
+}
+
+function StatCard({ stat }: { stat: StatItem }) {
+  const count = useCounter(stat.value);
+  const colors = colorMap[stat.color];
+  const Icon = stat.icon;
+
+  return (
+    <div className="glass-card rounded-2xl p-4 hover:border-white/15 transition-all">
+      <div className="flex items-center justify-between mb-3">
+        <div className={`w-10 h-10 rounded-xl ${colors.bg} flex items-center justify-center`}>
+          <Icon size={18} className={colors.text} />
+        </div>
+      </div>
+      <p className="text-xl font-bold text-white font-outfit">{count}</p>
+      <p className="text-[11px] text-gray-500 mt-0.5">{stat.label}</p>
+    </div>
+  );
+}
+
 export default function SeekerDashboard() {
   const { user, firebaseUser } = useAuth();
   const uid = user?.uid;
@@ -74,7 +99,7 @@ export default function SeekerDashboard() {
     limit(4)
   ]);
 
-  const STATS_ITEMS = [
+  const statsItems: StatItem[] = [
     { label: 'Applied Jobs', value: stats.appliedJobs, icon: Send, color: 'violet' },
     { label: 'Saved Jobs', value: stats.savedJobs, icon: Bookmark, color: 'amber' },
     { label: 'Interviews Scheduled', value: stats.interviews, icon: Calendar, color: 'cyan' },
@@ -124,22 +149,9 @@ export default function SeekerDashboard() {
         <>
           {/* Stats Grid */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {STATS_ITEMS.map((stat) => {
-              const count = useCounter(stat.value);
-              const colors = colorMap[stat.color];
-              const Icon = stat.icon;
-              return (
-                <div key={stat.label} className="glass-card rounded-2xl p-4 hover:border-white/15 transition-all">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className={`w-10 h-10 rounded-xl ${colors.bg} flex items-center justify-center`}>
-                      <Icon size={18} className={colors.text} />
-                    </div>
-                  </div>
-                  <p className="text-xl font-bold text-white font-outfit">{count}</p>
-                  <p className="text-[11px] text-gray-500 mt-0.5">{stat.label}</p>
-                </div>
-              );
-            })}
+            {statsItems.map((stat) => (
+              <StatCard key={stat.label} stat={stat} />
+            ))}
           </div>
 
           {/* Main Grid */}

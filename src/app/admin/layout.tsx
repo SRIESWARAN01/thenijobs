@@ -230,7 +230,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   <div className="max-h-64 overflow-y-auto divide-y divide-white/[0.04] no-scrollbar">
                     {notifications.length === 0 ? (
                       <div className="px-4 py-6 text-center text-xs text-gray-500">
-                        You're all caught up!
+                        You&apos;re all caught up!
                       </div>
                     ) : (
                       notifications.slice(0, 5).map((n) => (

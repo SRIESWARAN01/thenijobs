@@ -434,6 +434,26 @@ export default function JobDetailPageClient({ id }: { id: string }) {
                 🔒 Your details are kept private and secure
               </p>
             </div>
+
+            <div className="glass-card rounded-2xl p-5 border border-cyan-500/15">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center flex-shrink-0">
+                  <BellRing size={18} className="text-cyan-300" />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-sm font-bold text-white">Job Alerts</h3>
+                  <p className="text-xs text-gray-400 leading-relaxed">
+                    {job.location} பகுதியில் இதுபோன்ற jobs வந்தவுடன் mobile alert பெறலாம்.
+                  </p>
+                  <Link
+                    href="/seeker/job-alerts"
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-cyan-300 hover:text-cyan-200"
+                  >
+                    Create Job Alert <ChevronRight size={13} />
+                  </Link>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

@@ -66,8 +66,26 @@ export default function TalentSearchPage() {
   return (
     <div className="space-y-6 animate-fade-in-up font-outfit">
       <div>
-        <h1 className="text-2xl font-bold text-white font-outfit">Talent Search</h1>
-        <p className="text-sm text-gray-400 mt-1">Search and discover candidates for your openings</p>
+        <h1 className="text-2xl font-bold text-white font-outfit">Candidate Resume Bank</h1>
+        <p className="text-sm text-gray-400 mt-1">Skill, location, experience filter மூலம் suitable candidates-ஐ வேகமாக கண்டுபிடிக்கலாம்.</p>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {[
+          { icon: Award, label: 'Skill Filter', text: 'Role, trade, tools அடிப்படையில் search' },
+          { icon: MapPin, label: 'Location Filter', text: 'District / nearby candidate shortlist' },
+          { icon: Clock, label: 'Experience Filter', text: 'Fresher முதல் experienced வரை' },
+        ].map(({ icon: Icon, label, text }) => (
+          <div key={label} className="glass-card rounded-2xl p-4 flex items-start gap-3">
+            <div className="w-9 h-9 rounded-xl bg-cyan-500/10 flex items-center justify-center flex-shrink-0">
+              <Icon size={16} className="text-cyan-300" />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-white">{label}</p>
+              <p className="text-[11px] text-gray-500 mt-1 leading-relaxed">{text}</p>
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* Premium Banner */}
@@ -104,7 +122,7 @@ export default function TalentSearchPage() {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by name, skills, or keyword..."
+              placeholder="Search skill, role, candidate name..."
               className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
             />
           </div>

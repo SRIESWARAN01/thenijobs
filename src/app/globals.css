@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+@theme {
+  --font-sans: "Inter", "Outfit", system-ui, sans-serif;
+  --font-outfit: "Outfit", "Inter", system-ui, sans-serif;
+}
+
 @layer base {
   :root {
     --background: 240 10% 3.9%;

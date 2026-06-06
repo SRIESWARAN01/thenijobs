@@ -111,23 +111,23 @@ export default function BusinessesPage() {
 
       {/* Sticky Search */}
       <div className="sticky top-16 z-40 glass-nav border-b border-white/5 px-4 sm:px-6 py-3">
-        <div className="max-w-5xl mx-auto flex gap-2">
-          <div className="flex-1 flex items-center gap-2 search-input px-4 py-2.5">
+        <div className="max-w-5xl mx-auto flex flex-wrap gap-2">
+          <div className="min-w-0 flex-[1_1_220px] flex items-center gap-2 search-input px-4 py-2.5">
             <Search size={15} className="text-gray-500 shrink-0" />
             <input value={search} onChange={e => setSearch(e.target.value)} type="text"
               placeholder="Search businesses, services, categories..."
-              className="flex-1 bg-transparent text-sm text-white placeholder-gray-500 outline-none" />
+              className="min-w-0 flex-1 bg-transparent text-sm text-white placeholder-gray-500 outline-none" />
             {search && <button onClick={() => setSearch('')}><X size={13} className="text-gray-500" /></button>}
           </div>
-          <div className="flex items-center gap-2 search-input px-3 py-2.5">
+          <div className="min-w-0 flex flex-1 sm:flex-none items-center gap-2 search-input px-3 py-2.5">
             <MapPin size={14} className="text-violet-400 shrink-0" />
             <select value={selectedDistrict} onChange={e => setSelectedDistrict(e.target.value)}
-              className="bg-transparent text-sm text-gray-300 outline-none pr-1 w-24">
+              className="min-w-0 flex-1 sm:w-24 bg-transparent text-sm text-gray-300 outline-none pr-1">
               {DISTRICTS.map(d => <option key={d} value={d}>{d}</option>)}
             </select>
           </div>
           <button onClick={() => setShowFilters(!showFilters)}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-sm font-medium transition-all border
+            className={`flex flex-none items-center justify-center gap-2 px-4 py-2.5 rounded-2xl text-sm font-medium transition-all border
               ${showFilters || activeFilters > 0 ? 'bg-violet-500/20 border-violet-500/40 text-violet-300' : 'bg-white/5 border-white/10 text-gray-400'}`}>
             <SlidersHorizontal size={15} />
             <span className="hidden sm:inline">Filters</span>
@@ -209,7 +209,8 @@ export default function BusinessesPage() {
         </div>
 
         {/* Category quick pills */}
-        <div className="flex gap-2 overflow-x-auto no-scrollbar mb-6">
+        <div className="-mx-4 sm:mx-0 overflow-x-auto no-scrollbar mb-6 px-4 sm:px-0">
+          <div className="flex w-max gap-2">
           {CATEGORIES.slice(1).map(cat => (
             <button key={cat} onClick={() => setSelectedCategory(selectedCategory === cat ? 'All' : cat)}
               className={`px-4 py-2 rounded-xl text-xs font-medium whitespace-nowrap border transition-all shrink-0
@@ -217,6 +218,7 @@ export default function BusinessesPage() {
               {cat}
             </button>
           ))}
+          </div>
         </div>
 
         {/* Loading State */}

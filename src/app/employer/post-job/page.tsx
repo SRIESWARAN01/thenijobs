@@ -546,7 +546,7 @@ export default function PostJobPage() {
             <div className="glass-card rounded-2xl p-4 border border-cyan-500/20 bg-cyan-500/5">
               <p className="text-xs text-cyan-400 font-semibold mb-1">✅ Ready for Review</p>
               <p className="text-xs text-gray-400 leading-relaxed">
-                By clicking "Post Job Now", your listing will be submitted to the THENIJOBS administration for approval.
+                By clicking &quot;Post Job Now&quot;, your listing will be submitted to the THENIJOBS administration for approval.
                 Once approved, it will be visible in public search and alerts.
               </p>
             </div>

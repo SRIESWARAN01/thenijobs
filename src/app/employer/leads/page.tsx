@@ -80,6 +80,11 @@ export default function EmployerLeadsPage() {
     return name ? name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'LD';
   };
 
+  const getWhatsAppNumber = (phone?: string) => {
+    const digits = phone?.replace(/\D/g, '') || '';
+    return digits.length === 10 ? `91${digits}` : digits;
+  };
+
   const loading = companyLoading || leadsLoading;
 
   if (!companyId && !companyLoading) {
@@ -99,8 +104,8 @@ export default function EmployerLeadsPage() {
     <div className="space-y-6 animate-fade-in-up font-outfit text-white">
       {/* Page Header */}
       <div>
-        <h1 className="text-2xl font-bold font-outfit">Business Leads</h1>
-        <p className="text-sm text-gray-400 mt-1">Manage customer enquiries and business service leads</p>
+        <h1 className="text-2xl font-bold font-outfit">Lead Inbox / Request Quote</h1>
+        <p className="text-sm text-gray-400 mt-1">Company page-ல் வரும் Send Inquiry, Request Quote, WhatsApp leads அனைத்தையும் manage செய்யலாம்.</p>
       </div>
 
       {loading ? (
@@ -144,7 +149,7 @@ export default function EmployerLeadsPage() {
             {filtered.length === 0 ? (
               <div className="glass-card rounded-2xl p-12 text-center">
                 <TrendingUp size={32} className="text-gray-600 mx-auto mb-3" />
-                <p className="text-sm text-gray-400">No leads found.</p>
+                <p className="text-sm text-gray-400">இன்னும் quote / inquiry leads வரவில்லை.</p>
               </div>
             ) : (
               filtered.map((lead) => {
@@ -183,6 +188,35 @@ export default function EmployerLeadsPage() {
                             <span className="flex items-center gap-1"><Mail size={12} className="text-cyan-500" /> {lead.customerEmail}</span>
                           )}
                           <span>Received: {lead.createdAt ? new Date(lead.createdAt).toLocaleDateString() : 'Recent'}</span>
+                        </div>
+
+                        <div className="flex flex-wrap gap-2 pt-2">
+                          {lead.customerPhone && (
+                            <a
+                              href={`tel:${lead.customerPhone}`}
+                              className="inline-flex items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-[11px] font-semibold text-gray-200 hover:border-cyan-400/30 hover:text-cyan-200"
+                            >
+                              <Phone size={12} /> Call
+                            </a>
+                          )}
+                          {getWhatsAppNumber(lead.customerPhone) && (
+                            <a
+                              href={`https://wa.me/${getWhatsAppNumber(lead.customerPhone)}?text=${encodeURIComponent(`Hi ${lead.customerName}, we received your THENIJOBS enquiry.`)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-[11px] font-semibold text-emerald-300 hover:bg-emerald-500/15"
+                            >
+                              <MessageSquare size={12} /> WhatsApp
+                            </a>
+                          )}
+                          {lead.customerEmail && (
+                            <a
+                              href={`mailto:${lead.customerEmail}`}
+                              className="inline-flex items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-[11px] font-semibold text-gray-200 hover:border-cyan-400/30 hover:text-cyan-200"
+                            >
+                              <Mail size={12} /> Email
+                            </a>
+                          )}
                         </div>
                       </div>
 
