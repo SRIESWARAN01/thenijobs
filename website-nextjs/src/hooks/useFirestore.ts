@@ -1,0 +1,353 @@
+'use client';
+
+import { useEffect, useState, useCallback } from 'react';
+import {
+  collection,
+  doc,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  onSnapshot,
+  query,
+  type QueryConstraint,
+  type DocumentData,
+  type Query,
+  serverTimestamp,
+} from 'firebase/firestore';
+import { db } from '@/lib/firebase/config';
+import { normaliseTimestamps } from '@/lib/firebase/serializers';
+
+// ───────────────────────────── Types ─────────────────────────────
+
+export interface UseCollectionOptions {
+  /** Skip the real-time listener (data will stay empty) */
+  skip?: boolean;
+  /** Optional dependency values for SDK versions with opaque constraints */
+  deps?: readonly unknown[];
+}
+
+export interface UseCollectionReturn<T> {
+  data: T[];
+  loading: boolean;
+  error: string | null;
+  /** Force re-attach the listener */
+  refresh: () => void;
+}
+
+export interface UseDocumentReturn<T> {
+  data: T | null;
+  loading: boolean;
+  error: string | null;
+}
+
+export interface UseMutationReturn {
+  loading: boolean;
+  error: string | null;
+}
+
+interface ConstraintShape {
+  type?: string;
+  _field?: { segments?: unknown[]; canonicalString?: () => string };
+  _op?: string;
+  _value?: unknown;
+  _direction?: string;
+  _limit?: number;
+  _limitType?: string;
+}
+
+function stableValue(value: unknown): unknown {
+  if (value == null || ['string', 'number', 'boolean'].includes(typeof value)) {
+    return value;
+  }
+
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+
+  if (Array.isArray(value)) {
+    return value.map(stableValue);
+  }
+
+  if (typeof value === 'object') {
+    const record = value as Record<string, unknown>;
+    if (typeof record.toMillis === 'function') {
+      return (record.toMillis as () => number)();
+    }
+    if (typeof record.path === 'string') {
+      return record.path;
+    }
+
+    return Object.keys(record)
+      .sort()
+      .reduce<Record<string, unknown>>((acc, key) => {
+        acc[key] = stableValue(record[key]);
+        return acc;
+      }, {});
+  }
+
+  return String(value);
+}
+
+function getFieldKey(field: ConstraintShape['_field']) {
+  if (!field) return undefined;
+  if (typeof field.canonicalString === 'function') return field.canonicalString();
+  if (Array.isArray(field.segments)) return field.segments.join('.');
+  return undefined;
+}
+
+function getConstraintsKey(
+  constraints: QueryConstraint[],
+  deps?: readonly unknown[],
+) {
+  if (deps) {
+    return JSON.stringify(deps.map(stableValue));
+  }
+
+  return JSON.stringify(
+    constraints.map((constraint) => {
+      const shape = constraint as unknown as ConstraintShape;
+      return {
+        type: shape.type,
+        field: getFieldKey(shape._field),
+        op: shape._op,
+        value: stableValue(shape._value),
+        direction: shape._direction,
+        limit: shape._limit,
+        limitType: shape._limitType,
+      };
+    }),
+  );
+}
+
+// ───────────────────────────── useCollection ─────────────────────
+
+/**
+ * Subscribe to a Firestore collection in real-time with optional query constraints.
+ *
+ * @example
+ * ```ts
+ * const { data: jobs, loading } = useCollection<Job>('jobs', [
+ *   where('isActive', '==', true),
+ *   orderBy('createdAt', 'desc'),
+ *   limit(20),
+ * ]);
+ * ```
+ */
+export function useCollection<T extends DocumentData>(
+  collectionName: string,
+  queryConstraints: QueryConstraint[] = [],
+  options: UseCollectionOptions = {},
+): UseCollectionReturn<T> {
+  const [data, setData] = useState<T[]>([]);
+  const [loading, setLoading] = useState(!options.skip);
+  const [error, setError] = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const constraintsKey = getConstraintsKey(queryConstraints, options.deps);
+
+  const refresh = useCallback(() => setRefreshKey((k) => k + 1), []);
+
+  useEffect(() => {
+    if (options.skip) {
+      setData([]);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    let q: Query<DocumentData>;
+    if (queryConstraints.length > 0) {
+      q = query(collection(db, collectionName), ...queryConstraints);
+    } else {
+      q = collection(db, collectionName);
+    }
+
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const docs = snapshot.docs.map(
+          (d) => ({ id: d.id, ...normaliseTimestamps(d.data()) }) as unknown as T,
+        );
+        setData(docs);
+        setLoading(false);
+      },
+      (err) => {
+        console.error(`[useCollection] ${collectionName}:`, err);
+        setError(err.message);
+        setLoading(false);
+      },
+    );
+
+    return () => unsubscribe();
+    // queryConstraints are represented by constraintsKey to avoid listener churn
+    // when callers construct equivalent constraints inline.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [collectionName, constraintsKey, options.skip, refreshKey]);
+
+  return { data, loading, error, refresh };
+}
+
+// ───────────────────────────── useDocument ────────────────────────
+
+/**
+ * Subscribe to a single Firestore document in real-time.
+ *
+ * @example
+ * ```ts
+ * const { data: user, loading } = useDocument<User>('users', userId);
+ * ```
+ */
+export function useDocument<T extends DocumentData>(
+  collectionName: string,
+  docId: string | null | undefined,
+): UseDocumentReturn<T> {
+  const [data, setData] = useState<T | null>(null);
+  const [loading, setLoading] = useState(!!docId);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!docId) {
+      setData(null);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    const unsubscribe = onSnapshot(
+      doc(db, collectionName, docId),
+      (snap) => {
+        if (snap.exists()) {
+          setData({ id: snap.id, ...normaliseTimestamps(snap.data()) } as unknown as T);
+        } else {
+          setData(null);
+        }
+        setLoading(false);
+      },
+      (err) => {
+        console.error(`[useDocument] ${collectionName}/${docId}:`, err);
+        setError(err.message);
+        setLoading(false);
+      },
+    );
+
+    return () => unsubscribe();
+  }, [collectionName, docId]);
+
+  return { data, loading, error };
+}
+
+// ───────────────────────────── useAddDocument ────────────────────
+
+/**
+ * Add a new document to a Firestore collection.
+ *
+ * @example
+ * ```ts
+ * const { addDocument, loading } = useAddDocument('jobs');
+ * await addDocument({ title: 'React Dev', ... });
+ * ```
+ */
+export function useAddDocument(collectionName: string) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const addDocument = useCallback(
+    async (data: DocumentData): Promise<string> => {
+      setLoading(true);
+      setError(null);
+      try {
+        const docRef = await addDoc(collection(db, collectionName), {
+          ...data,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+        return docRef.id;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to add document';
+        setError(message);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [collectionName],
+  );
+
+  return { addDocument, loading, error };
+}
+
+// ───────────────────────────── useUpdateDocument ─────────────────
+
+/**
+ * Update an existing Firestore document.
+ *
+ * @example
+ * ```ts
+ * const { updateDocument } = useUpdateDocument('jobs');
+ * await updateDocument(jobId, { isActive: false });
+ * ```
+ */
+export function useUpdateDocument(collectionName: string) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const updateDocument = useCallback(
+    async (docId: string, data: Partial<DocumentData>): Promise<void> => {
+      setLoading(true);
+      setError(null);
+      try {
+        await updateDoc(doc(db, collectionName, docId), {
+          ...data,
+          updatedAt: serverTimestamp(),
+        });
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to update document';
+        setError(message);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [collectionName],
+  );
+
+  return { updateDocument, loading, error };
+}
+
+// ───────────────────────────── useDeleteDocument ─────────────────
+
+/**
+ * Delete a Firestore document.
+ *
+ * @example
+ * ```ts
+ * const { deleteDocument } = useDeleteDocument('jobs');
+ * await deleteDocument(jobId);
+ * ```
+ */
+export function useDeleteDocument(collectionName: string) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const deleteDocument = useCallback(
+    async (docId: string): Promise<void> => {
+      setLoading(true);
+      setError(null);
+      try {
+        await deleteDoc(doc(db, collectionName, docId));
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to delete document';
+        setError(message);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [collectionName],
+  );
+
+  return { deleteDocument, loading, error };
+}

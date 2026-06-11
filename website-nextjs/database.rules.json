@@ -1,0 +1,50 @@
+{
+  "rules": {
+    "users": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || root.child('users/' + auth.uid + '/role').val() === 'admin' || root.child('users/' + auth.uid + '/role').val() === 'super_admin')",
+        ".write": "auth != null && (root.child('users/' + auth.uid + '/role').val() === 'admin' || root.child('users/' + auth.uid + '/role').val() === 'super_admin' || (auth.uid === $uid && ((!data.exists() && (newData.child('role').val() === 'job_seeker' || newData.child('role').val() === 'employer' || newData.child('role').val() === 'business_owner' || newData.child('role').val() === 'supplier' || newData.child('role').val() === 'service_provider') && newData.child('isVerified').val() === false) || (data.exists() && newData.child('role').val() === data.child('role').val() && newData.child('isVerified').val() === data.child('isVerified').val()))))"
+      }
+    },
+    "companies": {
+      ".read": true,
+      "$companyId": {
+        ".write": "auth != null && ((data.exists() && (data.child('ownerId').val() === auth.uid || root.child('users/' + auth.uid + '/role').val() === 'admin' || root.child('users/' + auth.uid + '/role').val() === 'super_admin')) || (!data.exists() && newData.child('ownerId').val() === auth.uid && (newData.child('verificationStatus').val() === 'pending' || newData.child('status').val() === 'pending') && newData.child('isFeatured').val() !== true && newData.child('isPremium').val() !== true))"
+      }
+    },
+    "jobs": {
+      ".read": true,
+      "$jobId": {
+        ".write": "auth != null && ((data.exists() && (data.child('postedBy').val() === auth.uid || root.child('users/' + auth.uid + '/role').val() === 'admin' || root.child('users/' + auth.uid + '/role').val() === 'super_admin')) || (!data.exists() && newData.child('postedBy').val() === auth.uid && newData.child('isActive').val() === false && newData.child('isFeatured').val() !== true && newData.child('isUrgent').val() !== true && newData.child('isPremium').val() !== true))"
+      }
+    },
+    "applications": {
+      "$applicationId": {
+        ".read": "auth != null && (data.child('seekerId').val() === auth.uid || root.child('companies/' + data.child('companyId').val() + '/ownerId').val() === auth.uid || root.child('users/' + auth.uid + '/role').val() === 'admin' || root.child('users/' + auth.uid + '/role').val() === 'super_admin')",
+        ".write": "auth != null && ((data.exists() && (root.child('companies/' + data.child('companyId').val() + '/ownerId').val() === auth.uid || root.child('users/' + auth.uid + '/role').val() === 'admin' || root.child('users/' + auth.uid + '/role').val() === 'super_admin')) || (!data.exists() && newData.child('seekerId').val() === auth.uid && (newData.child('status').val() === 'applied' || newData.child('status').val() === 'pending_review')))"
+      }
+    },
+    "reviews": {
+      ".read": true,
+      "$reviewId": {
+        ".write": "auth != null && ((data.exists() && (data.child('reviewerId').val() === auth.uid || root.child('users/' + auth.uid + '/role').val() === 'admin' || root.child('users/' + auth.uid + '/role').val() === 'super_admin')) || (!data.exists() && newData.child('reviewerId').val() === auth.uid && newData.child('isVerified').val() !== true))"
+      }
+    },
+    "savedJobs": {
+      "$savedJobId": {
+        ".read": "auth != null && (data.child('userId').val() === auth.uid || root.child('users/' + auth.uid + '/role').val() === 'admin' || root.child('users/' + auth.uid + '/role').val() === 'super_admin')",
+        ".write": "auth != null && ((data.exists() && (data.child('userId').val() === auth.uid || root.child('users/' + auth.uid + '/role').val() === 'admin' || root.child('users/' + auth.uid + '/role').val() === 'super_admin')) || (!data.exists() && newData.child('userId').val() === auth.uid))"
+      }
+    },
+    "notifications": {
+      "$notificationId": {
+        ".read": "auth != null && (data.child('userId').val() === auth.uid || root.child('users/' + auth.uid + '/role').val() === 'admin' || root.child('users/' + auth.uid + '/role').val() === 'super_admin')",
+        ".write": "auth != null && (root.child('users/' + auth.uid + '/role').val() === 'admin' || root.child('users/' + auth.uid + '/role').val() === 'super_admin' || (!data.exists() && newData.child('userId').val() === auth.uid) || (data.exists() && data.child('userId').val() === auth.uid && newData.child('userId').val() === data.child('userId').val()))"
+      }
+    },
+    "$other": {
+      ".read": false,
+      ".write": false
+    }
+  }
+}
